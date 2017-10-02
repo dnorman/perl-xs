@@ -1,0 +1,5 @@
+sudo: false # run in a docker container
+language: perl
+script:
+  - cd t/
+  - perl Makefile.PL && make test
