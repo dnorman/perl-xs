@@ -1,39 +1,40 @@
+#![recursion_limit="128"]
 extern crate proc_macro;
+
 #[macro_use]
 extern crate quote;
 extern crate syn;
 
 use perl_xs_macro_support as support;
 
-use proc_macro::TokenStream;
-use syn::{Ident, Lit, StrStyle, VariantData};
+use syn::{Ident, DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(FromPerlKV, attributes(perlxs))]
-pub fn from_kv(input: TokenStream) -> TokenStream {
-    let ast = syn::parse_macro_input(&input.to_string()).unwrap();
+pub fn from_kv(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let ast = parse_macro_input!(input as DeriveInput);
 
     // Build the impl
-    let gen = impl_from_kv(&ast);
+    let output = impl_from_kv(&ast);
 
-    // Return the generated impl
-    gen.parse().unwrap()
+    // Return the generated impl and convert from proc_macro2::TokenStream
+    output.into()
 }
 
-fn impl_from_kv(ast: &syn::MacroInput) -> quote::Tokens {
+fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let ident = &ast.ident;
-    let ident_lit = Lit::Str(ast.ident.to_string(), StrStyle::Cooked);
+    let ident_lit = proc_macro2::Literal::string(&ast.ident.to_string());
+
     let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
 
     let errors = support::error::Errors::new();
 
-    let fields = match ast.body {
-        syn::Body::Struct(ref vdata) => match vdata {
-            &VariantData::Struct(ref fields) => support::ast::fields_from_ast(&errors, fields),
-            &VariantData::Tuple(_) | &VariantData::Unit => {
-                panic!("You can only derive this for normal structs!");
-            }
+    let fields = match ast.data {
+        syn::Data::Struct(syn::DataStruct{  fields: syn::Fields::Named(syn::FieldsNamed{ ref named, .. }), .. }) => {
+            support::ast::fields_from_ast(&errors, named.iter().map(|n| n.to_owned() ).collect())
         },
-        syn::Body::Enum(_) => panic!("You can only derive this on structs!"),
+        _ => {
+            panic!("You can only derive this for normal structs!");
+        }
     };
 
     errors.check().unwrap();
@@ -46,14 +47,14 @@ fn impl_from_kv(ast: &syn::MacroInput) -> quote::Tokens {
     for field in fields.iter() {
         let ident = &field.ident;
         let ty = &field.ty;
-        let var = Ident::new(format!("value_{}", ident));
-        let ty_lit = Lit::Str(quote!{#ty}.to_string(), StrStyle::Cooked);
+        let var = Ident::new(&format!("value_{}", ident), proc_macro2::Span::call_site());
+        let ty_lit = proc_macro2::Literal::string(&quote!{#ty}.to_string());
 
         #[allow(unused_variables)]
         let keys_lit: Vec<_> = field
             .keys
             .iter()
-            .map(|k| Lit::Str(k.to_string(), StrStyle::Cooked))
+            .map(|k| proc_macro2::Literal::string(&k.to_string()))
             .collect();
 
         letvars.push(quote! {
@@ -61,7 +62,7 @@ fn impl_from_kv(ast: &syn::MacroInput) -> quote::Tokens {
         });
 
         for key in field.keys.iter() {
-            let key_lit = Lit::Str(key.to_string(), StrStyle::Cooked);
+            let key_lit = proc_macro2::Literal::string(&key.to_string());
 
             matchparts.push(quote!{
                 #key_lit => {
@@ -147,7 +148,7 @@ fn impl_from_kv(ast: &syn::MacroInput) -> quote::Tokens {
         }
     };
 
-    let dummy_const = Ident::new(format!("_IMPL_PERLXS_FROMPERLKV_FOR_{}", ident));
+    let dummy_const = Ident::new(&format!("_IMPL_PERLXS_FROMPERLKV_FOR_{}", ident),proc_macro2::Span::call_site());
 
     quote! {
         #[allow(non_upper_case_globals)]
