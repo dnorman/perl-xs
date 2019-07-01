@@ -37,6 +37,10 @@ impl Errors {
         }
     }
 }
+//
+//impl std::convert::From<syn::Error> for Errors {
+//
+//}
 
 impl Drop for Errors {
     fn drop(&mut self) {
