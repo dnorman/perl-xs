@@ -37,10 +37,17 @@ impl Errors {
         }
     }
 }
-//
-//impl std::convert::From<syn::Error> for Errors {
-//
-//}
+
+
+
+impl std::convert::From<syn::Error> for Errors {
+    fn from (err: syn::Error) -> Errors{
+        Errors {
+            errors: RefCell::new(Some(vec![format!("{}", err)])),
+        }
+
+    }
+}
 
 impl Drop for Errors {
     fn drop(&mut self) {

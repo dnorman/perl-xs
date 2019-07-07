@@ -1,20 +1,36 @@
-//use perl_xs;
-//use perl_xs::perlxs;
-use perl_xs::FromPerlKV;
+use perl_xs::{Context,FromPerlKV};
+use std::io::Error;
 
-//    package XSTest::Derive;
+//#[perlxs]
+//fn test_from_kv(test: TestStruct) -> String {
+//    // Offset should be made automatic after arg unpacking
+//    format!("{:?}",test)
+//}
+//
+//#[perlxs(package="XSTest::Derive")]
+//fn test_from_kv_bool(test: TestStruct) -> bool {
+//    // Offset should be made automatic after arg unpacking
+//    true
+//}
 
 #[perlxs]
-fn test_from_kv(test: TestStruct) -> String {
+fn test_from_kv_debug(ctx: &mut Context) -> String {
     // Offset should be made automatic after arg unpacking
-    format!("{:?}",test)
+    match TestStruct::from_perl_kv(ctx, 0) {
+        Ok(s) => {
+            format!("{:?}",s)
+        },
+        Err(e) => {
+            croak!(format!("{}",e));
+        }
+    }
 }
 
-#[perlxs(package="XSTest::Derive")]
-fn test_from_kv_bool(test: TestStruct) -> bool {
-    // Offset should be made automatic after arg unpacking
-    true
-}
+pub const PERL_XS:
+&'static [(&'static str, ::perl_xs::raw::XSUBADDR_t)] =
+    &[("XSTest::Derive::test_from_kv_debug", _xs_test_from_kv_debug as ::perl_xs::raw::XSUBADDR_t),
+//        ("GTCore::Util::RandString::rand_decimal", rand_decimal as ::perl_xs::raw::XSUBADDR_t)
+    ];
 
 
 //xs! {
