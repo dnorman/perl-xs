@@ -1,6 +1,3 @@
-use syn;
-use syn::PathArguments;
-use syn::NestedMeta;
 use proc_macro2::{Ident, Span};
 
 use crate::error::Errors;
@@ -55,7 +52,7 @@ impl Field {
         }
 
         //Path(None, Path { global: false, segments: [PathSegment { ident: Ident("Option"), parameters: AngleBracketed(AngleBracketedParameterData { lifetimes: [], types: [Path(None, Path { global: false, segments: [PathSegment { ident: Ident("String"), parameters: AngleBracketed(AngleBracketedParameterData { lifetimes: [], types: [], bindings: [] }) }] })], bindings: [] }) }] })
-        let (optional, inner_ty) = de_optionalize(&field.ty);
+        let (optional, inner_ty) = crate::ast::de_optionalize(&field.ty);
 
         Field {
             ident: field.ident.clone().unwrap(),
@@ -65,21 +62,6 @@ impl Field {
             optional: optional,
         }
     }
-}
-
-pub fn de_optionalize(ty: &syn::Type) -> (bool, syn::Type) {
-    if let &syn::Type::Path(syn::TypePath{path: syn::Path { ref segments, .. }, ..}) = ty {
-        if segments.len() == 1 && segments[0].ident == "Option" {
-            if let PathArguments::AngleBracketed(ref abpd) = segments[0].arguments {
-                if abpd.args.len() == 1 {
-                    if let syn::GenericArgument::Type( path @ syn::Type::Path(_)) = &abpd.args[0] {
-                        return (true, path.clone());
-                    }
-                }
-            }
-        }
-    }
-    (false, ty.clone())
 }
 
 pub fn get_meta_items(attr: &syn::Attribute) -> Option<Vec<syn::NestedMeta>> {
