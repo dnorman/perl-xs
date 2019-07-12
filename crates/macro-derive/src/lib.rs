@@ -9,7 +9,7 @@ use perl_xs_macro_support as support;
 
 use syn::{Ident, DeriveInput, parse_macro_input};
 
-#[proc_macro_derive(FromPerlKV, attributes(perlxs))]
+#[proc_macro_derive(DeriveTryFromContext, attributes(perlxs))]
 pub fn from_kv(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
 
@@ -66,17 +66,19 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
             matchparts.push(quote!{
                 #key_lit => {
-                    match ctx.st_try_fetch::<#ty>(i+1) {
+                    match ctx.st_try_fetch::<#ty>(*offset) {
                         Some(Ok(v))  => {
                             #var = Some( v );
                         },
                         Some(Err(e)) => {
-                            errors.push(_perlxs::error::ToStructErrPart::ValueParseFail{key: #key_lit, ty: #ty_lit, error: e.to_string(), offset: i+1});
+                            errors.push(_perlxs::error::ToStructErrPart::ValueParseFail{key: #key_lit, ty: #ty_lit, error: e.to_string(), offset: *offset});
                         },
                         None         => {
                             errors.push(_perlxs::error::ToStructErrPart::OmittedValue(#key_lit));
                         },
-                    }
+                    };
+                    *offset += 1;
+
                 }
             });
         }
@@ -100,8 +102,7 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     let from_kv_stack = quote!{
 
-        let mut i = offset;
-        while let Some(sv_res) = ctx.st_try_fetch::<String>(i) {
+        while let Some(sv_res) = ctx.st_try_fetch::<String>(*offset) {
             match sv_res {
                 Ok(key) => {
                     match &*key {
@@ -114,20 +115,23 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 Err(e) => {
                     errors.push(
                         _perlxs::error::ToStructErrPart::KeyParseFail{
-                            offset: i,
+                            offset: *offset,
                             ty: "String",
                             error: e.to_string()
                         });
                 }
             }
-            i += 2;
+            *offset += 2;
         };
 
     };
 
     let impl_block = quote! {
-        impl #impl_generics _perlxs::FromPerlKV for #ident #ty_generics #where_clause {
-            fn from_perl_kv(ctx: &mut _perlxs::Context, offset: isize) -> Result<Self,_perlxs::error::ToStructErr>
+
+        impl <'a> _perlxs::TryFromContext<'a> for #ident #ty_generics #where_clause {
+            type Error = _perlxs::error::ToStructErr;
+
+            fn try_from_context<'b: 'a>(ctx: &'b mut _perlxs::Context, _name: &str, offset: &mut isize) -> Result<Self,Self::Error>
             {
                 let mut errors = Vec::new();
                 #(#letvars;)*

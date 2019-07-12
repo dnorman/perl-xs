@@ -1,22 +1,38 @@
-use perl_xs::{Context,FromPerlKV};
+use perl_xs::{Context,TryFromContext,DeriveTryFromContext};
 use std::io::Error;
 
-//#[perlxs]
-//fn test_from_kv(test: TestStruct) -> String {
-//    // Offset should be made automatic after arg unpacking
-//    format!("{:?}",test)
-//}
-//
-//#[perlxs(package="XSTest::Derive")]
-//fn test_from_kv_bool(test: TestStruct) -> bool {
-//    // Offset should be made automatic after arg unpacking
-//    true
-//}
+#[perlxs]
+fn test_from_kv(test: TestStruct) -> String {
+    // Offset should be made automatic after arg unpacking
+    format!("{:?}",test)
+}
+
+#[perlxs(package="XSTest::Derive")]
+fn test_from_kv_bool(test: TestStruct) -> bool {
+    true
+}
+
+#[perlxs]
+fn test_from_kv_error(ctx: &mut Context) -> String {
+    let mut index: isize = 0;
+    let err = TestStruct::try_from_context(ctx, "thingy", &mut index).unwrap_err();
+    format!("{:?}",err)
+}
+
+#[perlxs]
+fn test_from_kv_error_display(ctx: &mut Context) -> String {
+
+    let mut index : isize = 0;
+    let err = TestStruct::try_from_context(ctx, "thingy", &mut index).unwrap_err();
+    format!("{}",err)
+}
 
 #[perlxs]
 fn test_from_kv_debug(ctx: &mut Context) -> String {
+
+    let mut index : isize = 0;
     // Offset should be made automatic after arg unpacking
-    match TestStruct::from_perl_kv(ctx, 0) {
+    match TestStruct::try_from_context(ctx, "thingy",&mut index) {
         Ok(s) => {
             format!("{:?}",s)
         },
@@ -28,36 +44,14 @@ fn test_from_kv_debug(ctx: &mut Context) -> String {
 
 pub const PERL_XS:
 &'static [(&'static str, ::perl_xs::raw::XSUBADDR_t)] =
-    &[("XSTest::Derive::test_from_kv_debug", _xs_test_from_kv_debug as ::perl_xs::raw::XSUBADDR_t),
-//        ("GTCore::Util::RandString::rand_decimal", rand_decimal as ::perl_xs::raw::XSUBADDR_t)
+    &[("XSTest::Derive::test_from_kv", _xs_test_from_kv as ::perl_xs::raw::XSUBADDR_t),
+    ("XSTest::Derive::test_from_kv_bool", _xs_test_from_kv_bool as ::perl_xs::raw::XSUBADDR_t),
+    ("XSTest::Derive::test_from_kv_error", _xs_test_from_kv_bool as ::perl_xs::raw::XSUBADDR_t),
+    ("XSTest::Derive::test_from_kv_error_display", _xs_test_from_kv_bool as ::perl_xs::raw::XSUBADDR_t),
+    ("XSTest::Derive::test_from_kv_debug", _xs_test_from_kv_debug as ::perl_xs::raw::XSUBADDR_t),
     ];
 
-
-//xs! {
-//    package XSTest::Derive;
-//    sub test_from_kv_debug(ctx) {
-//        // Offset should be made automatic after arg unpacking
-//        match TestStruct::from_perl_kv(&mut ctx, 0) {
-//            Ok(s) => {
-//                format!("{:?}",s)
-//            },
-//            Err(e) => {
-//                croak!(format!("{}",e));
-//            }
-//        }
-//    }
-//
-//    sub test_from_kv_error(ctx) {
-//        let err = TestStruct::from_perl_kv(&mut ctx, 0).unwrap_err();
-//        format!("{:?}",err)
-//    }
-//    sub test_from_kv_error_display(ctx) {
-//        let err = TestStruct::from_perl_kv(&mut ctx, 0).unwrap_err();
-//        format!("{}",err)
-//    }
-//}
-
-#[derive(FromPerlKV,Debug)]
+#[derive(DeriveTryFromContext,Debug)]
 struct TestStruct {
     alpha:          bool,
     beta:           String,

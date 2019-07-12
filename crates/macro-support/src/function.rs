@@ -41,14 +41,11 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
 
     let (impl_generics, ty_generics, where_clause) = f.decl.generics.split_for_impl();
 
-
-
     let errors = crate::error::Errors::new();
 
     let mut rust_arg_unpacks = Vec::new();
     let mut rust_args = Vec::new();
 
-    let mut arg_index : isize = 0;
     for arg in f.decl.inputs.iter(){
         println!("{:?}", arg);
         match arg {
@@ -63,43 +60,20 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
             }
             syn::FnArg::Captured(c) => {
                 if let syn::Pat::Ident(syn::PatIdent{ ident: ref arg_ident , .. }) = c.pat {
+                    let var = syn::Ident::new(&format!("value_{}", arg_ident), proc_macro2::Span::call_site());
+
                     let rust_arg_name = format!("{}", arg_ident);
+                    let rust_arg_type = &c.ty;
 
+                    let fetch = quote! {
+                        let #var = match <#rust_arg_type as TryFromContext>::try_from_context(_xs_ctx, #rust_arg_name, &mut offset){
+                              Ok(v)  => v,
+                              Err(e) => croak!(format!("{} for {}",e, #perl_fn_name)),
+                        }
+                    };
 
-                    println!("ARGTY: {:?}", c.ty );
-                    // TODO: move perl_xs::Context into a subcrate so we can do a proper type comparison without having a crate dependency cycle
-                    // HACK HACK HACK - should be if c.ty == perl_xs::Context {
-                    if format!("{:?}", c.ty).contains("ident: \"Context\"") {
-                        rust_args.push( syn::Ident::new("_xs_ctx",arg_ident.span()) );
-
-                    }else {
-
-                        let (optional, inner_ty) = crate::ast::de_optionalize(&c.ty);
-
-                        // TODO: Test inner_ty to see if it impls FromPerlKV and treat that specially
-
-                        let fetch = if optional {
-                            quote! {
-                                let #arg_ident = match _xs_ctx.st_try_fetch::<#inner_ty>(#arg_index){
-                                      Some(Ok(v))  => Some(v),
-                                      Some(Err(e)) => croak!("Invalid argument \'#rust_arg_name\' for #perl_fn_name"),
-                                      None         => None
-                                }
-                            }
-                        } else {
-                            quote! {
-                                let #arg_ident = match _xs_ctx.st_try_fetch::<#inner_ty>(#arg_index){
-                                      Some(Ok(v))  => v,
-                                      Some(Err(e)) => croak!("Invalid argument \'#rust_arg_name\' for #perl_fn_name"),
-                                      None         => croak!("Missing argument \'#rust_arg_name\' for #perl_fn_name"),
-                                  }
-                            }
-                        };
-
-                        arg_index += 1;
-                        rust_arg_unpacks.push(fetch );
-                        rust_args.push( syn::Ident::new(&rust_arg_name,arg_ident.span()) );
-                    }
+                    rust_arg_unpacks.push(fetch );
+                    rust_args.push( var );
                 }
 
             },
@@ -123,6 +97,7 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
             let perl = ::perl_xs::raw::initialize(pthx);
             ::perl_xs::context::Context::wrap(perl,|mut _xs_ctx| {
 
+                let mut offset : isize = 0;
                 #(#rust_arg_unpacks;)*
 
                 #rust_fn_ident(#(#rust_args,)*)
