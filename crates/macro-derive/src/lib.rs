@@ -126,6 +126,7 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
     };
 
+    // TODO check to see if we can use $crate here or not
     let impl_block = quote! {
 
         impl <'a> _perlxs::TryFromContext<'a> for #ident #ty_generics #where_clause {

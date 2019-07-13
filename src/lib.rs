@@ -4,6 +4,17 @@
 
 #[macro_use]
 extern crate perl_sys;
+#[macro_use]
+extern crate ctor;
+
+use std::collections::HashMap;
+use std::sync::{Arc,Mutex};
+type subptr = fn(pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut crate::raw::CV);
+#[ctor]
+/// TODO - explain what this is for
+pub static REGISTRY : Arc<Mutex<HashMap<String,Vec<(String,subptr)>>>> = {
+    Arc::new(Mutex::new(HashMap::new() ))
+};
 
 #[macro_use]
 mod macros;
@@ -34,4 +45,5 @@ pub use crate::hash::HV;
 pub use crate::raw::{G_DISCARD, G_VOID};
 pub use crate::raw::{SSize_t, Size_t, IV, NV, STRLEN, UV};
 pub use crate::scalar::{DataRef, SV};
+
 

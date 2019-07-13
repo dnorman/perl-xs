@@ -20,7 +20,10 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
 
     let rust_fn_ident = f.ident.clone();
     let rust_fn_name = format!("{}",f.ident);
-    let perl_fn_name = format!("Test::Foo::{}", rust_fn_name);
+
+    // TODO generate this from module name, overridable with attribute
+    let perl_fn_name: String = format!("XSTest::{}", rust_fn_name);
+    let boot_pkg: String = perl_fn_name.split("::").next().unwrap().to_owned();
 
     let xs_name = syn::Ident::new(&format!("_xs_{}",rust_fn_name),f.ident.span());
 
@@ -74,23 +77,50 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
 
     errors.check().unwrap();
 
-    let output = quote!{
+    let dummy_const = syn::Ident::new(&format!("_IMPL_PERLXS_FOR{}", rust_fn_name),proc_macro2::Span::call_site());
 
-        #f
 
-        pub extern "C" fn #xs_name (pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut ::perl_xs::raw::CV) {
+    let bind_fn = quote!{
+        extern "C" fn #xs_name (pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut ::perl_xs::raw::CV) {
 
             let perl = ::perl_xs::raw::initialize(pthx);
             ::perl_xs::context::Context::wrap(perl,|mut _xs_ctx| {
 
                 let mut offset : isize = 0;
                 #(#rust_arg_unpacks;)*
-
                 #rust_fn_ident(#(#rust_args,)*)
 
             });
 
         }
+    };
+
+    let bind = quote!{
+        #[allow(non_upper_case_globals)]
+        const #dummy_const: () = {
+            #[macro_use]
+            extern crate ctor;
+            extern crate perl_xs;
+
+            #bind_fn
+
+            // Run at library load time
+            #[ctor]
+            fn bootstrap {
+                let reg = ::perl_xs::REGISTRY.lock();
+                let list = reg.entry(#boot_pkg).or_default();
+                list.push((#boot_pkg,#xs_name));
+            }
+        }
+    };
+
+
+    let output = quote!{
+
+        #f
+
+        #bind
+
     };
 
     Ok(output)

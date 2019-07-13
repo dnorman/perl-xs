@@ -14,14 +14,16 @@ mod param;
 mod data;
 mod derive;
 
-xs! {
-    bootstrap boot_XSTest;
-    use stack;
-    use scalar;
-    use array;
-    use hash;
-    use panic;
-    use param;
-    use data;
-    use derive;
-}
+xs_bootstrap!("XSTest");
+
+//xs! {
+//    bootstrap boot_XSTest;
+//    use stack;
+//    use scalar;
+//    use array;
+//    use hash;
+//    use panic;
+//    use param;
+//    use data;
+//    use derive;
+//}
