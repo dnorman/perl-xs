@@ -66,18 +66,17 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
 
             matchparts.push(quote!{
                 #key_lit => {
-                    match ctx.st_try_fetch::<#ty>(*offset) {
+                    match ctx.st_try_fetch::<#ty>(*offset + 1) {
                         Some(Ok(v))  => {
                             #var = Some( v );
                         },
                         Some(Err(e)) => {
-                            errors.push(_perlxs::error::ToStructErrPart::ValueParseFail{key: #key_lit, ty: #ty_lit, error: e.to_string(), offset: *offset});
+                            errors.push(_perlxs::error::ToStructErrPart::ValueParseFail{key: #key_lit, ty: #ty_lit, error: e.to_string(), offset: *offset + 1});
                         },
                         None         => {
                             errors.push(_perlxs::error::ToStructErrPart::OmittedValue(#key_lit));
                         },
                     };
-                    *offset += 1;
 
                 }
             });
@@ -103,6 +102,7 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let from_kv_stack = quote!{
 
         while let Some(sv_res) = ctx.st_try_fetch::<String>(*offset) {
+            println!("Offset {} = [{:?}]", offset, sv_res);
             match sv_res {
                 Ok(key) => {
                     match &*key {

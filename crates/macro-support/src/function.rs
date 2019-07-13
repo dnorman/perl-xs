@@ -68,7 +68,8 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
                     let fetch = quote! {
                         let #var = match <#rust_arg_type as TryFromContext>::try_from_context(_xs_ctx, #rust_arg_name, &mut offset){
                               Ok(v)  => v,
-                              Err(e) => croak!(format!("{} for {}",e, #perl_fn_name)),
+//                              Err(e) => croak!(format!("{} for {}",e, #perl_fn_name)),
+                              Err(e) => croak!(format!("{}",e)),
                         }
                     };
 
