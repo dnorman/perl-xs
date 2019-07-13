@@ -10,3 +10,6 @@ perl-sys = { git="https://github.com/vickenty/perl-sys" }
 perl-xs-macro-derive = { path  = "crates/macro-derive" }
 perl-xs-macro-function = { path  = "crates/macro-function" }
 ctor = "0.1.9"
+
+[features]
+debug_print_generated_code=[]

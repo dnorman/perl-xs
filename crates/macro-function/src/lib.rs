@@ -11,9 +11,9 @@ pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
 
     match support::function::expand(attr.into(), input.into()) {
         Ok(tokens) => {
-            if cfg!(feature = "debug_print_generated_code") {
+          //  if cfg!(feature = "debug_print_generated_code") {
                 println!("{}", tokens);
-            }
+          //  }
             tokens.into()
         }
         Err(_error) => panic!("Unknown expansion error"),

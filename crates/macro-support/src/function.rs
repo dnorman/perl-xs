@@ -77,7 +77,7 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
 
     errors.check().unwrap();
 
-    let dummy_const = syn::Ident::new(&format!("_IMPL_PERLXS_FOR{}", rust_fn_name),proc_macro2::Span::call_site());
+    let dummy_const = syn::Ident::new(&format!("_IMPL_PERLXS_FOR_{}", rust_fn_name),proc_macro2::Span::call_site());
 
 
     let bind_fn = quote!{
@@ -99,19 +99,19 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
         #[allow(non_upper_case_globals)]
         const #dummy_const: () = {
             #[macro_use]
-            extern crate ctor;
             extern crate perl_xs;
+            use perl_xs::ctor;
 
             #bind_fn
 
             // Run at library load time
             #[ctor]
-            fn bootstrap {
-                let reg = ::perl_xs::REGISTRY.lock();
+            fn bootstrap() {
+                let reg = ::perl_xs::REGISTRY.lock().unwrap();
                 let list = reg.entry(#boot_pkg).or_default();
                 list.push((#boot_pkg,#xs_name));
             }
-        }
+        };
     };
 
 

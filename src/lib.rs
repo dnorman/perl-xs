@@ -5,7 +5,7 @@
 #[macro_use]
 extern crate perl_sys;
 #[macro_use]
-extern crate ctor;
+pub extern crate ctor;
 
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};

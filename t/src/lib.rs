@@ -14,7 +14,7 @@ mod param;
 mod data;
 mod derive;
 
-xs_bootstrap!("XSTest");
+//xs_bootstrap!("XSTest");
 
 //xs! {
 //    bootstrap boot_XSTest;
