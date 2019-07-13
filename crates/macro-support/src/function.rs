@@ -3,35 +3,20 @@ use proc_macro2::TokenStream;
 use crate::error::Errors;
 use quote::quote;
 
-/// Takes the parsed input from a `#[wasm_bindgen]` macro and returns the generated bindings
+/// Takes the parsed input from a `#[perlxs]` macro and returns the generated bindings
 pub fn expand(attr: TokenStream, input: TokenStream) -> Result<TokenStream, Errors> {
 
-    // TODO: generate wrapper function
-//    parser::reset_attrs_used();
     let item = syn::parse2::<syn::Item>(input.clone())?;
-//    let opts = syn::parse2(attr)?;
 
-   match item {
-       syn::Item::Fn(f) => {
+    match item {
+        syn::Item::Fn(f) => {
            expand_function(f)
-       },
-       _ => panic!("cannot expand macro for non-function")
-   }
-//    let mut tokens = proc_macro2::TokenStream::new();
+        },
+        _ => panic!("cannot expand macro for non-function")
+    }
 }
 
 fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
-//    println!("Item: {:?}", item);
-//    println!("Opts {:?}", opts);
-
-//    let mut program = backend::ast::Program::default();
-//    item.macro_parse(&mut program, (Some(opts), &mut tokens))?;
-//    program.try_to_tokens(&mut tokens)?;
-
-    // If we successfully got here then we should have used up all attributes
-    // and considered all of them to see if they were used. If one was forgotten
-    // that's a bug on our end, so sanity check here.
-//    parser::assert_all_attrs_checked();
 
     let rust_fn_ident = f.ident.clone();
     let rust_fn_name = format!("{}",f.ident);

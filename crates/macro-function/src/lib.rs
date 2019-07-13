@@ -19,16 +19,3 @@ pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
         Err(_error) => panic!("Unknown expansion error"),
     }
 }
-
-//#[proc_macro_attribute]
-//pub fn __wasm_bindgen_class_marker(attr: TokenStream, input: TokenStream) -> TokenStream {
-//    match wasm_bindgen_macro_support::expand_class_marker(attr.into(), input.into()) {
-//        Ok(tokens) => {
-//            if cfg!(feature = "xxx_debug_only_print_generated_code") {
-//                println!("{}", tokens);
-//            }
-//            tokens.into()
-//        }
-//        Err(diagnostic) => (quote! { #diagnostic }).into(),
-//    }
-//}
