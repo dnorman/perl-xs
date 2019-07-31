@@ -2,6 +2,8 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use perl_xs_macro_support as support;
+use proc_macro2::Span;
+use quote::quote;
 
 
 #[proc_macro_attribute]

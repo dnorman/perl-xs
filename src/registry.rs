@@ -5,29 +5,29 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 
 // Not public API. Used by generated code.
 #[doc(hidden)]
-pub struct Registry  {
-    head: AtomicPtr<Node>,
+pub struct Registry<T: 'static>  {
+    head: AtomicPtr<Node<T>>,
 }
 
-struct Node {
-    symbol: &'static str,
-    ptr: subptr,
-    next: Option<&'static Node>,
+struct Node<T: 'static> {
+    item: T,
+    next: Option<&'static Node<T>>,
 }
 
 #[doc(hidden)]
-impl Registry {
+impl <T: 'static> Registry<T> {
     // Not public API. Used by generated code.
     pub const fn new() -> Self {
         Registry {
             head: AtomicPtr::new(ptr::null_mut()),
         }
     }
-    pub fn submit(&'static self, symbol: &'static str, ptr: subptr) {
-        let new = Box::leak(Box::new(Node { symbol, ptr, next: None }));
-        let mut head = self.head.load(Ordering::SeqCst);
+    pub fn submit(&'static self, item: T) {
+        let new = Box::leak(Box::new(Node { item, next: None }));
+
+        let mut head = list.load(Ordering::SeqCst);
         loop {
-            let prev = self.head.compare_and_swap(head, new, Ordering::SeqCst);
+            let prev = list.compare_and_swap(head, new, Ordering::SeqCst);
             if prev == head {
                 // Pointer is always null or valid &'static Node.
                 new.next = unsafe { prev.as_ref() };
@@ -37,28 +37,26 @@ impl Registry {
             }
         }
     }
-
-    pub fn iter (&self) -> Iter {
+    pub fn iter (&self) -> Iter<T> {
         let head = self.head.load(Ordering::SeqCst);
-        Iter {
+        Iter::<T> {
             // Head pointer is always null or valid &'static Node.
             node: unsafe { head.as_ref() },
         }
     }
 }
 
-pub struct Iter {
-    node: Option<&'static Node>,
+pub struct Iter<T: 'static> {
+    node: Option<&'static Node<T>>,
 }
 
-impl Iterator for Iter {
-    type Item = (&'static str, &'static subptr);
+impl <T: 'static> Iterator for Iter<T> {
+    type Item = &'static T;
 
     fn next(&mut self) -> Option<Self::Item> {
         let node = self.node?;
-        let symbol = &node.symbol;
-        let ptr = &node.ptr;
+        let item = &node.item;
         self.node = node.next;
-        Some((symbol,ptr))
+        Some(item)
     }
 }

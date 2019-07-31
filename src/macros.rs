@@ -129,18 +129,45 @@ macro_rules! croak {
     });
 }
 
+/// Specify perl package name
+#[macro_export]
+macro_rules! package {
+    ($pkg:tt) => (
+        const _XS_PACKAGE_DEF: () = {
+            #[ctor]
+            fn package_def() {
+                ::perl_xs::PACKAGE_REGISTRY.submit(Package{ module: module_path!(), package: $pkg});
+            }
+        };
+    );
+}
+
 ///// Create XS boot function, required by Perl XSLoader
-//#[macro_export]
-//macro_rules! perlxs_bootstrap {
-//    ($pkg:expr) => (
-//        #[no_mangle]
-//        #[allow(non_snake_case)]
-//        fn boot_XSTest (pthx: $crate::raw::Interpreter, _cv: *mut $crate::raw::CV) {
-//            println!("BOOT {}", $pkg);
-//            let perl = $crate::raw::initialize(pthx);
-//            $crate::context::Context::wrap(perl, |ctx| {
-//                1 as $crate::raw::IV
-//            });
-//        }
-//    );
-//}
+#[macro_export]
+macro_rules! perlxs_bootstrap {
+    ($pkg:expr) => (
+        pthx! {
+            #[no_mangle]
+            #[allow(non_snake_case)]
+            fn boot_XSTest (pthx, _cv: *mut perl_xs::raw::CV) {
+                println!("BOOT");
+                let perl = perl_xs::raw::initialize(pthx);
+                perl_xs::context::Context::wrap(perl, |ctx| {
+
+//                    let package_rewrites : Vec<(&'static str, &'static str)> = Vec::new();
+                    for (package, ptr) in perl_xs::PACKAGE_REGISTRY.iter() {
+                        // TODO
+                    }
+
+                    for (symbol, ptr) in perl_xs::SYMBOL_REGISTRY.iter() {
+                        println!("BOOT - FOUND {}", symbol);
+                        let cname = ::std::ffi::CString::new(symbol.to_owned()).unwrap();
+                        ctx.new_xs(&cname, *ptr);
+                    }
+
+                    1 as perl_xs::raw::IV
+                });
+            }
+        }
+    );
+}

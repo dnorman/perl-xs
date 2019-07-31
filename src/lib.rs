@@ -13,8 +13,20 @@ use std::sync::{Arc,Mutex};
 
 mod registry;
 
+
+struct Symbol{
+    name: &'static str,
+    ptr: subptr,
+}
+struct Package {
+    module: &'static str,
+    package: &'static str,
+}
+
 #[doc(hidden)]
-pub static REGISTRY : crate::registry::Registry = crate::registry::Registry::new();
+pub static SYMBOL_REGISTRY : crate::registry::Registry<Symbol> = crate::registry::Registry::<Symbol>::new();
+#[doc(hidden)]
+pub static PACKAGE_REGISTRY : crate::registry::Registry<Package> = crate::registry::Registry::<Package>::new();
 
 #[macro_use]
 mod macros;
