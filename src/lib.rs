@@ -5,16 +5,16 @@
 #[macro_use]
 extern crate perl_sys;
 #[macro_use]
-pub extern crate ctor;
+#[doc(hidden)]
+pub use ctor::*;
 
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
-type subptr = fn(pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut crate::raw::CV);
-#[ctor]
-/// TODO - explain what this is for
-pub static REGISTRY : Arc<Mutex<HashMap<String,Vec<(String,subptr)>>>> = {
-    Arc::new(Mutex::new(HashMap::new() ))
-};
+
+mod registry;
+
+#[doc(hidden)]
+pub static REGISTRY : crate::registry::Registry = crate::registry::Registry::new();
 
 #[macro_use]
 mod macros;

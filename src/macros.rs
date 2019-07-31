@@ -129,30 +129,18 @@ macro_rules! croak {
     });
 }
 
-///// TODO
+///// Create XS boot function, required by Perl XSLoader
 //#[macro_export]
-//macro_rules! xs_bootstrap {
-//    ($pkg:expr) => ({
-//    #[no_mangle]
-//
+//macro_rules! perlxs_bootstrap {
+//    ($pkg:expr) => (
+//        #[no_mangle]
 //        #[allow(non_snake_case)]
-//        fn boot_$pkg (pthx, _cv: *mut $crate::raw::CV) {
+//        fn boot_XSTest (pthx: $crate::raw::Interpreter, _cv: *mut $crate::raw::CV) {
 //            println!("BOOT {}", $pkg);
 //            let perl = $crate::raw::initialize(pthx);
 //            $crate::context::Context::wrap(perl, |ctx| {
-//                $(
-//                    let reg = $crate::REGISTRY.lock();
-//                    if let Some(items) = reg.get($pkg) {
-//                        for &(subname, subptr) in items.iter() {
-//                            println!("BOOT - FOUND {}", subname);
-//                            let cname = ::std::ffi::CString::new(subname).unwrap();
-//                            ctx.new_xs(&cname, subptr as ::perl_xs::raw::XSUBADDR_t);
-//                        }
-//                    }
-//                )*
-//
 //                1 as $crate::raw::IV
 //            });
 //        }
-//    });
+//    );
 //}

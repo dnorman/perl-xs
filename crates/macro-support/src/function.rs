@@ -22,7 +22,7 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
     let rust_fn_name = format!("{}",f.ident);
 
     // TODO generate this from module name, overridable with attribute
-    let perl_fn_name: String = format!("XSTest::{}", rust_fn_name);
+    let perl_fn_name: String = format!("XSTest::Derive::{}", rust_fn_name);
     let boot_pkg: String = perl_fn_name.split("::").next().unwrap().to_owned();
 
     let xs_name = syn::Ident::new(&format!("_xs_{}",rust_fn_name),f.ident.span());
@@ -89,7 +89,6 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
                 let mut offset : isize = 0;
                 #(#rust_arg_unpacks;)*
                 #rust_fn_ident(#(#rust_args,)*)
-
             });
 
         }
@@ -99,17 +98,14 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
         #[allow(non_upper_case_globals)]
         const #dummy_const: () = {
             #[macro_use]
-            extern crate perl_xs;
-            use perl_xs::ctor;
+            use perl_xs::*;
 
             #bind_fn
 
             // Run at library load time
             #[ctor]
             fn bootstrap() {
-                let reg = ::perl_xs::REGISTRY.lock().unwrap();
-                let list = reg.entry(#boot_pkg).or_default();
-                list.push((#boot_pkg,#xs_name));
+                ::perl_xs::REGISTRY.submit(#perl_fn_name,#xs_name);
             }
         };
     };

@@ -14,7 +14,27 @@ mod param;
 mod data;
 mod derive;
 
-//xs_bootstrap!("XSTest");
+//perlxs_bootstrap!(XSTest);
+//pub extern "C" fn boot_XSTest (pthx: *mut perl_xs::raw::Interpreter, _cv: *mut perl_xs::raw::CV) {
+pthx! {
+    #[no_mangle]
+    #[allow(non_snake_case)]
+    fn boot_XSTest (pthx, _cv: *mut perl_xs::raw::CV) {
+        println!("BOOT");
+        let perl = perl_xs::raw::initialize(pthx);
+        perl_xs::context::Context::wrap(perl, |ctx| {
+
+            for (symbol, ptr) in perl_xs::REGISTRY.iter() {
+                println!("BOOT - FOUND {}", symbol);
+                let cname = ::std::ffi::CString::new(symbol.to_owned()).unwrap();
+                ctx.new_xs(&cname, *ptr);
+            }
+
+            1 as perl_xs::raw::IV
+        });
+    }
+}
+
 
 //xs! {
 //    bootstrap boot_XSTest;
