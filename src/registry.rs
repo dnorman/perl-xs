@@ -1,4 +1,3 @@
-type subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *mut crate::raw::CV);
 
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, Ordering};
@@ -25,9 +24,9 @@ impl <T: 'static> Registry<T> {
     pub fn submit(&'static self, item: T) {
         let new = Box::leak(Box::new(Node { item, next: None }));
 
-        let mut head = list.load(Ordering::SeqCst);
+        let mut head = self.head.load(Ordering::SeqCst);
         loop {
-            let prev = list.compare_and_swap(head, new, Ordering::SeqCst);
+            let prev = self.head.compare_and_swap(head, new, Ordering::SeqCst);
             if prev == head {
                 // Pointer is always null or valid &'static Node.
                 new.next = unsafe { prev.as_ref() };

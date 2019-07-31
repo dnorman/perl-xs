@@ -1,3 +1,4 @@
+#![feature(concat_idents)]
 #![deny(missing_docs)]
 
 //! Perl XS API for Rust.
@@ -13,12 +14,16 @@ use std::sync::{Arc,Mutex};
 
 mod registry;
 
+type subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *mut crate::raw::CV);
 
-struct Symbol{
+#[doc(hidden)]
+pub struct Symbol{
     name: &'static str,
     ptr: subptr,
 }
-struct Package {
+
+#[doc(hidden)]
+pub struct Package {
     module: &'static str,
     package: &'static str,
 }
