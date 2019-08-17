@@ -19,12 +19,11 @@ package!("XSTest");
 //    use derive;
 //}
 
-
-mod stack;
-mod scalar;
 mod array;
+mod data;
+mod derive;
 mod hash;
 mod panic;
 mod param;
-mod data;
-mod derive;
+mod scalar;
+mod stack;

@@ -1,4 +1,4 @@
-use perl_xs::{ SV, HV };
+use perl_xs::{HV, SV};
 
 xs! {
     package XSTest::Hash;
