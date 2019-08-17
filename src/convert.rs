@@ -2,7 +2,6 @@
 
 use crate::SV;
 use crate::context::Context;
-use crate::error;
 use crate::raw;
 use std::fmt::Display;
 
@@ -63,7 +62,7 @@ impl <'a, T> TryFromContext<'a> for T where T: TryFromSV + 'a {
     fn try_from_context<'b: 'a>(ctx: &'b mut Context, name: &str, index: &mut isize) -> Result<T, Self::Error>{
         let out = match ctx.st_try_fetch::<T>(*index){
             Some(Ok(v))  => Ok(v),
-            Some(Err(e)) => Err(format!("Invalid argument '{}'", name)),
+            Some(Err(e)) => Err(format!("Invalid argument '{}' ({})", name, e)),
             None         => Err(format!("Missing argument '{}'", name)),
         };
 
@@ -78,7 +77,7 @@ impl <'a, T> TryFromContext<'a> for Option<T> where T: TryFromSV + 'a {
     fn try_from_context<'b: 'a>(ctx: &'b mut Context, name: &str, index: &mut isize) -> Result<Option<T>,Self::Error>{
         let out = match ctx.st_try_fetch::<T>(*index){
             Some(Ok(v))  => Ok(Some(v)),
-            Some(Err(e)) => Err(format!("Invalid argument '{}'", name)),
+            Some(Err(e)) => Err(format!("Invalid argument '{}' ({})", name, e)),
             None         => Ok(None),
         };
 
@@ -91,7 +90,7 @@ impl <'a, T> TryFromContext<'a> for Option<T> where T: TryFromSV + 'a {
 impl<'a> TryFromContext<'a> for &'a mut Context {
     type Error = &'static str;
 
-    fn try_from_context<'b: 'a> (mut ctx: &'b mut Context, _name: &str, _index: &mut isize) -> Result<&'a mut Context,Self::Error>{
+    fn try_from_context<'b: 'a> (ctx: &'b mut Context, _name: &str, _index: &mut isize) -> Result<&'a mut Context,Self::Error>{
         Ok(ctx)
     }
 }

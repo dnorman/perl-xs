@@ -1,5 +1,5 @@
 use perl_xs::{Context,TryFromContext,DeriveTryFromContext};
-use std::io::Error;
+
 package!("XSTest::Derive");
 
 
@@ -28,7 +28,7 @@ fn test_from_kv_dual_arg_unpack(test: TestStruct, ctx: &mut Context ) -> (String
 }
 
 #[perlxs]
-fn test_from_kv_bool(test: TestStruct) -> bool {
+fn test_from_kv_bool(_test: TestStruct) -> bool {
     true
 }
 

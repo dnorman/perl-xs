@@ -5,12 +5,9 @@
 
 #[macro_use]
 extern crate perl_sys;
-#[macro_use]
+
 #[doc(hidden)]
 pub use ctor::*;
-
-use std::collections::HashMap;
-use std::sync::{Arc,Mutex};
 
 #[doc(hidden)]
 mod registry;
@@ -18,7 +15,7 @@ mod registry;
 #[doc(hidden)]
 pub mod boot;
 
-type subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *mut crate::raw::CV);
+type Subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *mut crate::raw::CV);
 
 #[doc(hidden)]
 #[derive(Debug)]
@@ -26,7 +23,7 @@ pub struct Symbol{
     pub module: &'static str,
     pub package: Option<&'static str>,
     pub name: &'static str,
-    pub ptr: subptr,
+    pub ptr: Subptr,
 }
 
 #[doc(hidden)]

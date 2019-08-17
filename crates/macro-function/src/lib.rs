@@ -15,9 +15,9 @@ pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
 
     match support::function::expand(attr.into(), input.into()) {
         Ok(tokens) => {
-          //  if cfg!(feature = "debug_print_generated_code") {
+            if cfg!(feature = "debug_print_generated_code") {
                 println!("{}", tokens);
-          //  }
+            }
             tokens.into()
         }
         Err(_error) => panic!("Unknown expansion error"),
@@ -28,7 +28,7 @@ pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn package(input: TokenStream) -> TokenStream {
 
-    println!("INPUT: {:?}", input);
+//    println!("INPUT: {:?}", input);
 
     let item = syn::parse2::<syn::Lit>(input.into()).unwrap();
 
@@ -53,7 +53,7 @@ pub fn package(input: TokenStream) -> TokenStream {
         #[allow(non_snake_case)]
         // TODO concat this ident
         extern "C" fn #boot_fn_name (pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut ::perl_xs::raw::CV) {
-            println!("BOOT");
+//            println!("BOOT");
 
             let perl = perl_xs::raw::initialize(pthx);
             perl_xs::context::Context::wrap(perl, |ctx| {
