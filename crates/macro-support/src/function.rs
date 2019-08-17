@@ -107,7 +107,7 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
             fn bootstrap() {
                 let module = module_path!();
 //                println!("MODULE PATH {}", module);
-                ::perl_xs::SYMBOL_REGISTRY.submit(Symbol{ module, name: #rust_fn_name, ptr: #xs_name});
+                ::perl_xs::SYMBOL_REGISTRY.submit(Symbol{ module, name: #rust_fn_name, package: None, ptr: #xs_name});
             }
         };
     };

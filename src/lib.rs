@@ -12,7 +12,11 @@ pub use ctor::*;
 use std::collections::HashMap;
 use std::sync::{Arc,Mutex};
 
+#[doc(hidden)]
 mod registry;
+
+#[doc(hidden)]
+pub mod boot;
 
 type subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *mut crate::raw::CV);
 
@@ -20,6 +24,7 @@ type subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *
 #[derive(Debug)]
 pub struct Symbol{
     pub module: &'static str,
+    pub package: Option<&'static str>,
     pub name: &'static str,
     pub ptr: subptr,
 }

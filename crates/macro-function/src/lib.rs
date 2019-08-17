@@ -28,7 +28,7 @@ pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn package(input: TokenStream) -> TokenStream {
 
-//    println!("INPUT: {:?}", input);
+    println!("INPUT: {:?}", input);
 
     let item = syn::parse2::<syn::Lit>(input.into()).unwrap();
 
@@ -53,55 +53,12 @@ pub fn package(input: TokenStream) -> TokenStream {
         #[allow(non_snake_case)]
         // TODO concat this ident
         extern "C" fn #boot_fn_name (pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut ::perl_xs::raw::CV) {
-//            println!("BOOT");
-            use std::collections::HashMap;
+            println!("BOOT");
 
             let perl = perl_xs::raw::initialize(pthx);
             perl_xs::context::Context::wrap(perl, |ctx| {
 
-                let mut package_rewrites : HashMap<&'static str, &'static str> = HashMap::new();
-                for package in perl_xs::PACKAGE_REGISTRY.iter() {
-                    package_rewrites.insert(package.module, package.package);
-                }
-
-                for symbol in ::perl_xs::SYMBOL_REGISTRY.iter() {
-//                    println!("BOOT - FOUND {:?}", symbol);
-
-                    let mut symbol_name : String = symbol.module.to_string();
-
-                    if let Some(package_rewrite) = package_rewrites.get(&symbol.module) {
-                        symbol_name = package_rewrite.to_string();
-
-                    }else{
-                        let mut module_name : &str = &symbol.module;
-                        let mut non_aliased_parts : Vec<&str> = Vec::new();
-
-                        loop {
-                            let mut parts = module_name.rsplitn(2,"::");
-                            if let (Some(spill),Some(module_name_part)) = (parts.next(),parts.next()) {
-                                non_aliased_parts.push(spill);
-
-                                if let Some(package_rewrite) = package_rewrites.get(module_name_part) {
-                                    symbol_name = package_rewrite.to_string();
-                                    symbol_name.push_str("::");
-                                    symbol_name.push_str(&non_aliased_parts.join("::"));
-                                    break;
-                                }
-                                module_name = module_name_part;
-                            }else{
-                                break;
-                            }
-                        }
-                    }
-
-                    symbol_name.push_str("::");
-                    symbol_name.push_str(symbol.name);
-
-//                    println!("SYMBOL NAME: {}", symbol_name);
-//
-                    let cname = ::std::ffi::CString::new(symbol_name).unwrap();
-                    ctx.new_xs(&cname, symbol.ptr);
-                }
+                ::perl_xs::boot::boot(ctx, #package_name);
 
                 1 as perl_xs::raw::IV
             });
