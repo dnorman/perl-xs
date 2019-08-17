@@ -17,15 +17,18 @@ mod registry;
 type subptr = extern "C" fn(pthx: *mut ::perl_sys::types::PerlInterpreter, cv: *mut crate::raw::CV);
 
 #[doc(hidden)]
+#[derive(Debug)]
 pub struct Symbol{
-    name: &'static str,
-    ptr: subptr,
+    pub module: &'static str,
+    pub name: &'static str,
+    pub ptr: subptr,
 }
 
 #[doc(hidden)]
+#[derive(Debug)]
 pub struct Package {
-    module: &'static str,
-    package: &'static str,
+    pub module: &'static str,
+    pub package: &'static str,
 }
 
 #[doc(hidden)]
@@ -53,7 +56,7 @@ pub mod error;
 pub mod croak;
 
 pub use perl_xs_macro_derive::DeriveTryFromContext;
-pub use perl_xs_macro_function::perlxs;
+pub use perl_xs_macro_function::*;
 
 pub use crate::array::AV;
 pub use crate::context::Context;

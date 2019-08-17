@@ -1,3 +1,5 @@
+#![recursion_limit="256"]
+
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
@@ -8,8 +10,8 @@ use quote::quote;
 
 #[proc_macro_attribute]
 pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
-    println!("ATTR: {}", attr);
-    println!("INPUT: {}", input);
+//    println!("ATTR: {}", attr);
+//    println!("INPUT: {}", input);
 
     match support::function::expand(attr.into(), input.into()) {
         Ok(tokens) => {
@@ -24,50 +26,87 @@ pub fn perlxs(attr: TokenStream, input: TokenStream) -> TokenStream {
 
 
 #[proc_macro]
-pub fn package(item: TokenStream) -> TokenStream {
+pub fn package(input: TokenStream) -> TokenStream {
 
-    let item = syn::parse2::<syn::Item>(input.clone())?;
+//    println!("INPUT: {:?}", input);
 
-//    match item {
-//        syn::Item::Fn(f) => {
-//            expand_function(f)
-//        },
-//        _ => panic!("cannot expand macro for non-function")
-//    }
-    let boot = syn::Ident::new(&format!("boot_{}",name),m.ident.span());
+    let item = syn::parse2::<syn::Lit>(input.into()).unwrap();
 
-    boot_, $pkg
-    println!("ITEM: {}", item);
-    quote! {
+    let package_name = match item {
+        syn::Lit::Str(s) => s,
+        _ => panic!("cannot expand macro for non-function")
+    };
 
+    let package_name_clean = package_name.value().replace("::","__");
+    let boot_fn_name = syn::Ident::new(&format!("boot_{}",package_name_clean),Span::call_site());
+
+    let body = quote! {
         const _XS_PACKAGE_DEF: () = {
             #[ctor]
             fn package_def() {
-                ::perl_xs::PACKAGE_REGISTRY.submit(::perl_xs::Package{ module: module_path!(), package: $pkg});
+//                println!("PACKAGE DEF: {}: {}", module_path!(), #package_name);
+                ::perl_xs::PACKAGE_REGISTRY.submit(::perl_xs::Package{ module: module_path!(), package: #package_name});
             }
         };
 
         #[no_mangle]
         #[allow(non_snake_case)]
         // TODO concat this ident
-        extern "C" fn #boot (*mut ::perl_sys::types::PerlInterpreter, _cv: *mut crate::raw::CV) {
-            println!("BOOT");
+        extern "C" fn #boot_fn_name (pthx: *mut ::perl_sys::types::PerlInterpreter, _cv: *mut ::perl_xs::raw::CV) {
+//            println!("BOOT");
+            use std::collections::HashMap;
+
             let perl = perl_xs::raw::initialize(pthx);
             perl_xs::context::Context::wrap(perl, |ctx| {
 
-//                    let package_rewrites : Vec<(&'static str, &'static str)> = Vec::new();
-//                    for (package, ptr) in perl_xs::PACKAGE_REGISTRY.iter() {
-//                        // TODO
-//                    }
+                let mut package_rewrites : HashMap<&'static str, &'static str> = HashMap::new();
+                for package in perl_xs::PACKAGE_REGISTRY.iter() {
+                    package_rewrites.insert(package.module, package.package);
+                }
 
-                for (symbol, ptr) in perl_xs::SYMBOL_REGISTRY.iter() {
-                    println!("BOOT - FOUND {}", symbol);
-                    let cname = ::std::ffi::CString::new(symbol.to_owned()).unwrap();
-                    ctx.new_xs(&cname, *ptr);
+                for symbol in ::perl_xs::SYMBOL_REGISTRY.iter() {
+//                    println!("BOOT - FOUND {:?}", symbol);
+
+                    let mut symbol_name : String = symbol.module.to_string();
+
+                    if let Some(package_rewrite) = package_rewrites.get(&symbol.module) {
+                        symbol_name = package_rewrite.to_string();
+
+                    }else{
+                        let mut module_name : &str = &symbol.module;
+                        let mut non_aliased_parts : Vec<&str> = Vec::new();
+
+                        loop {
+                            let mut parts = module_name.rsplitn(2,"::");
+                            if let (Some(spill),Some(module_name_part)) = (parts.next(),parts.next()) {
+                                non_aliased_parts.push(spill);
+
+                                if let Some(package_rewrite) = package_rewrites.get(module_name_part) {
+                                    symbol_name = package_rewrite.to_string();
+                                    symbol_name.push_str("::");
+                                    symbol_name.push_str(&non_aliased_parts.join("::"));
+                                    break;
+                                }
+                                module_name = module_name_part;
+                            }else{
+                                break;
+                            }
+                        }
+                    }
+
+                    symbol_name.push_str("::");
+                    symbol_name.push_str(symbol.name);
+
+//                    println!("SYMBOL NAME: {}", symbol_name);
+//
+                    let cname = ::std::ffi::CString::new(symbol_name).unwrap();
+                    ctx.new_xs(&cname, symbol.ptr);
                 }
 
                 1 as perl_xs::raw::IV
             });
         }
-    }.into()
+    };
+
+    body.into()
 }

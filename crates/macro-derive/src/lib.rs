@@ -102,7 +102,7 @@ fn impl_from_kv(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
     let from_kv_stack = quote!{
 
         while let Some(sv_res) = ctx.st_try_fetch::<String>(*offset) {
-            println!("Offset {} = [{:?}]", offset, sv_res);
+//            println!("Offset {} = [{:?}]", offset, sv_res);
             match sv_res {
                 Ok(key) => {
                     match &*key {

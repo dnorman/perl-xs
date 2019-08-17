@@ -1,5 +1,7 @@
 use perl_xs::{Context,TryFromContext,DeriveTryFromContext};
 use std::io::Error;
+package!("XSTest::Derive");
+
 
 #[perlxs]
 fn test_from_kv(test: TestStruct) -> String {
@@ -25,24 +27,28 @@ fn test_from_kv_dual_arg_unpack(test: TestStruct, ctx: &mut Context ) -> (String
     (auto,manual)
 }
 
-#[perlxs(package="XSTest::Derive")]
+#[perlxs]
 fn test_from_kv_bool(test: TestStruct) -> bool {
     true
 }
 
-#[perlxs]
-fn test_from_kv_error(ctx: &mut Context) -> String {
-    let mut index: isize = 0;
-    let err = TestStruct::try_from_context(ctx, "thingy", &mut index).unwrap_err();
-    format!("{:?}",err)
-}
+mod error {
+    use super::*;
+    package!("XSTest::Derive::Error");
 
-#[perlxs]
-fn test_from_kv_error_display(ctx: &mut Context) -> String {
+    #[perlxs]
+    fn test_from_kv_error(ctx: &mut Context) -> String {
+        let mut index: isize = 0;
+        let err = TestStruct::try_from_context(ctx, "thingy", &mut index).unwrap_err();
+        format!("{:?}", err)
+    }
 
-    let mut index : isize = 0;
-    let err = TestStruct::try_from_context(ctx, "thingy", &mut index).unwrap_err();
-    format!("{}",err)
+    #[perlxs]
+    fn test_from_kv_error_display(ctx: &mut Context) -> String {
+        let mut index: isize = 0;
+        let err = TestStruct::try_from_context(ctx, "thingy", &mut index).unwrap_err();
+        format!("{}", err)
+    }
 }
 
 #[perlxs]

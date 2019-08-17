@@ -35,7 +35,7 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
     let mut rust_args = Vec::new();
 
     for arg in f.decl.inputs.iter(){
-        println!("{:?}", arg);
+//        println!("{:?}", arg);
         match arg {
             syn::FnArg::SelfRef(_) => {
                 //TODO: determine how to implement a proxy struct for perl objects
@@ -105,9 +105,9 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
             // Run at library load time
             #[ctor]
             fn bootstrap() {
-                let path = module_path!();
-                println!("MODULE PATH {}", path);
-                ::perl_xs::SYMBOL_REGISTRY.submit(Symbol{ name: #rust_fn_name, ptr: #xs_name});
+                let module = module_path!();
+//                println!("MODULE PATH {}", module);
+                ::perl_xs::SYMBOL_REGISTRY.submit(Symbol{ module, name: #rust_fn_name, ptr: #xs_name});
             }
         };
     };
