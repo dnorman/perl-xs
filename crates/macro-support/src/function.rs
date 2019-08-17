@@ -4,7 +4,7 @@ use crate::error::Errors;
 use quote::quote;
 
 /// Takes the parsed input from a `#[perlxs]` macro and returns the generated bindings
-pub fn expand(attr: TokenStream, input: TokenStream) -> Result<TokenStream, Errors> {
+pub fn expand(_attr: TokenStream, input: TokenStream) -> Result<TokenStream, Errors> {
 
     let item = syn::parse2::<syn::Item>(input.clone())?;
 
@@ -27,7 +27,7 @@ fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
 
     let xs_name = syn::Ident::new(&format!("_xs_{}",rust_fn_name),f.ident.span());
 
-    let (impl_generics, ty_generics, where_clause) = f.decl.generics.split_for_impl();
+//    let (_impl_generics, _ty_generics, _where_clause) = f.decl.generics.split_for_impl();
 
     let errors = crate::error::Errors::new();
 

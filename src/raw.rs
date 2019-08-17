@@ -52,9 +52,5 @@ where
     T: AsRef<str>,
 {
     let s = e.as_ref();
-    perl.newSVpvn_flags(
-        s.as_ptr() as *const _,
-        s.len() as STRLEN,
-        SVs_TEMP | SVf_UTF8,
-    )
+    perl.newSVpvn_flags(s.as_ptr() as *const _, s.len() as STRLEN, SVs_TEMP | SVf_UTF8)
 }
