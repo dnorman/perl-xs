@@ -8,15 +8,10 @@ pub fn expand(_attr: TokenStream, input: TokenStream) -> Result<TokenStream, Err
 
     let item = syn::parse2::<syn::Item>(input.clone())?;
 
-    match item {
-        syn::Item::Fn(f) => {
-           expand_function(f)
-        },
+    let f = match item {
+        syn::Item::Fn(f) => f,
         _ => panic!("cannot expand macro for non-function")
-    }
-}
-
-fn expand_function (f: syn::ItemFn ) -> Result<TokenStream,Errors>{
+    };
 
     let rust_fn_ident = f.ident.clone();
     let rust_fn_name = format!("{}",f.ident);
